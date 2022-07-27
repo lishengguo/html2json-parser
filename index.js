@@ -220,23 +220,27 @@
 
 		function parseEndTag(tag, tagName) {
 			// If no tag name is provided, clean shop
-			if (!tagName)
+			if (!tagName){
 				var pos = 0;
-
 				// Find the closest opened tag of the same type
-			else
+			}else{
 				for (var pos = stack.length - 1; pos >= 0; pos--)
 					if (stack[pos] == tagName)
 						break;
+			}
 
 			if (pos >= 0) {
 				// Close all the open elements, up the stack
 				for (var i = stack.length - 1; i >= pos; i--)
 					if (handler.end)
-						handler.end(stack[i]);
+						handler.end(stack[i],i,tag);
 
 				// Remove the open elements from the stack
 				stack.length = pos;
+			}
+			if (!tag && pos == 0){
+				if(handler.finish)
+					handler.finish();
 			}
 		}
 	};
@@ -245,6 +249,7 @@
 	this.HTMLtoJSON = function (html) {
 		var results = "";
 		var level = 0;
+		var isArray = false;
 		HTMLParser(html, {
 			level: 0,
 			spar: '',
@@ -270,6 +275,14 @@
 				this.spar = new Array(this.level + 1).join('\t');
 			},
 			start: function (tag, attrs, unary) {
+				if(isArray || this.level == 0 && results.length > 0){
+					results += ","
+					if(isArray == false){
+						isArray = true
+						results = '[' + results
+					}
+				}
+                                //console.log('start level:' + this.level)
 				this.moveLevel(1)
 				results += "{"
 				attrs.unshift({
@@ -279,7 +292,8 @@
 				for (var i = 0; i < attrs.length; i++){ 
 					var name = attrs[i].name;
 					var escaped = attrs[i].escaped; 
-					
+					if(name == 'class')name = 'className';
+	
 					results += '\r\n' + this.spar + '"' + name + '":'
 					if(name.toLowerCase() == 'style'){
 						results += this.parseStyle(escaped)
@@ -296,9 +310,14 @@
 					this.end(tag);
 				}
 			},
-			end: function (tag) {
+			end: function (tag,pos,_tag) {
+                                //console.log('end level:' + this.level,tag,pos,_tag)
 				this.moveLevel(-1)
 				results += '\r\n' + this.spar + '}';
+			},
+			finish: function (){
+				if(isArray)
+					results+=']'
 			},
 			chars: function (text) {  
 				/*
