@@ -1,6 +1,6 @@
 {
   "name": "html2json-parser",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Parse HTML to JSON",
   "main": "index.js",
   "scripts": {

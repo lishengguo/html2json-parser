@@ -201,15 +201,22 @@
 				var attrs = [];
 
 				rest.replace(attr, function (match, name) {
-					var value = arguments[2] ? arguments[2] :
-						arguments[3] ? arguments[3] :
-						arguments[4] ? arguments[4] :
-						fillAttrs[name] ? name : "";
-
+					// p1 命中双引号  name="11"
+					// p2 命中单引号  name='11'
+					// p3 命中花括号  name={}
+					// p4 命中其他	  name=11  name=false name=[]
+					var value = p1 || p2 || p3 || p4 || fillAttrs[name] && name || "" 
+					var escaped = value.replace(/(^|[^\\])"/g, '$1\\\"')  
+					if (p3){
+						value = Function('return {' + p3 + '}')()
+					}
+					if (p4){
+						value = JSON.parse(p4)
+					}
 					attrs.push({
 						name: name,
-						value: value,
-						escaped: value.replace(/(^|[^\\])"/g, '$1\\\"') //"
+						value: value, 
+						escaped: escaped,
 					});
 				});
 
